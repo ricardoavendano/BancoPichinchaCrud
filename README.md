@@ -14,11 +14,11 @@ Ricardo Avendaño Casas
 8. Uso Docker compose
 
 ## Para ejecutar el proyecto localmente (sin Docker)se deben realizar los siguientes pasos
-1. Descargar fuente de github: git clone git clone https://github.com/ricardoavendano/BancoPichinchaCrud.git
+1. Descargar fuente de github: git clone https://github.com/ricardoavendano/BancoPichinchaCrud.git
 2. Ir al directorio donde se encuentra el fuente y crear jar: mvn clean install (se crea la carpeta target)
 3. Ir al directorio donde se encuentra el fuente y dirigirse a la carpeta target; por línea de comandos ejecutar jar: java -jar prueba-0.0.1-SNAPSHOT.jar
 
-## Para ejecutar el proyecto con Docker compuse se deben realizar los siguientes pasos
+## Para ejecutar el proyecto con Docker compose se deben realizar los siguientes pasos
 1. Descargar fuente de github: git clone git clone https://github.com/ricardoavendano/BancoPichinchaCrud.git
 2. Ir al directorio donde se encuentra el fuente y crear jar: mvn clean install (se crea la carpeta target)
 3. Ejecutar para levantar la imagen Docker
