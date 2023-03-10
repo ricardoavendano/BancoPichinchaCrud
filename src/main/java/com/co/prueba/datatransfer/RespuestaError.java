@@ -2,13 +2,13 @@ package com.co.prueba.datatransfer;
 
 import org.springframework.http.HttpStatus;
 
-public class Respuesta {
+public class RespuestaError {
 
 	private final String code;
 	private final String description;
 	private final HttpStatus status;
 
-	public Respuesta(String code, String description, HttpStatus status) {
+	public RespuestaError(String code, String description, HttpStatus status) {
 
 		this.code = code;
 		this.description = description;

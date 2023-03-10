@@ -3,21 +3,27 @@ package com.co.prueba.service;
 import org.springframework.stereotype.Service;
 
 import com.co.prueba.datatransfer.CuentaRequest;
-import com.co.prueba.datatransfer.Respuesta;
-
-import fj.data.Either;
+import com.co.prueba.exception.CampoInesperadoExepcion;
+import com.co.prueba.exception.CampoObligatorioExcepcion;
+import com.co.prueba.exception.ClienteInactivoExcepcion;
+import com.co.prueba.exception.ClienteNoEncontradoExcepcion;
+import com.co.prueba.exception.CuentaExisteExcepcion;
+import com.co.prueba.exception.CuentaNoEncontradaExcepcion;
+import com.co.prueba.exception.CuentaSaldoInicialExcepcion;
 
 @Service
 public interface CuentaService {
 
-	public Either<Exception, CuentaRequest> consultarCuenta(Long numeroCuenta);
+	public CuentaRequest consultarCuenta(Long numeroCuenta) throws CuentaNoEncontradaExcepcion;
 
-	public Either<Exception, Respuesta> crearCuenta(CuentaRequest cuentaRequest);
+	public void crearCuenta(CuentaRequest cuentaRequest) throws CampoObligatorioExcepcion,
+			ClienteNoEncontradoExcepcion, ClienteInactivoExcepcion, CuentaExisteExcepcion, CampoInesperadoExepcion;
 
-	public Either<Exception, Respuesta> actualizarEstadoCuenta(Boolean estado, Long numeroCuenta);
+	public void actualizarEstadoCuenta(Boolean estado, Long numeroCuenta) throws CuentaNoEncontradaExcepcion;
 
-	public Either<Exception, Respuesta> actualizarCuenta(CuentaRequest cuentaRequest);
+	public void actualizarCuenta(CuentaRequest cuentaRequest)
+			throws CampoObligatorioExcepcion, CuentaNoEncontradaExcepcion, ClienteNoEncontradoExcepcion, CuentaSaldoInicialExcepcion, CampoInesperadoExepcion;
 
-	public Either<Exception, Respuesta> eliminarCuenta(Long numeroCuenta);
+	public void eliminarCuenta(Long numeroCuenta) throws CuentaNoEncontradaExcepcion;
 
 }

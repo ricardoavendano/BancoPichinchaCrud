@@ -3,20 +3,23 @@ package com.co.prueba.service;
 import org.springframework.stereotype.Service;
 
 import com.co.prueba.datatransfer.ClienteRequest;
-import com.co.prueba.datatransfer.Respuesta;
-
-import fj.data.Either;
+import com.co.prueba.exception.CampoInesperadoExepcion;
+import com.co.prueba.exception.CampoObligatorioExcepcion;
+import com.co.prueba.exception.ClienteExisteExcepcion;
+import com.co.prueba.exception.ClienteNoEncontradoExcepcion;
 
 @Service
 public interface ClienteService {
 
-	public Either<Exception, ClienteRequest> consultarCliente(Long identificacion);
+	public ClienteRequest consultarCliente(Long identificacion) throws ClienteNoEncontradoExcepcion;
 
-	public Either<Exception, Respuesta> crearCliente(ClienteRequest clienteRequest);
+	public void crearCliente(ClienteRequest clienteRequest)
+			throws ClienteExisteExcepcion, CampoObligatorioExcepcion, CampoInesperadoExepcion;
 
-	public Either<Exception, Respuesta> actualizarDireccionCliente(String direccion, Long identificacion);
+	public void actualizarDireccionCliente(String direccion, Long identificacion) throws ClienteNoEncontradoExcepcion;
 
-	public Either<Exception, Respuesta> actualizarCliente(ClienteRequest clienteRequest);
+	public void actualizarCliente(ClienteRequest clienteRequest) throws ClienteNoEncontradoExcepcion,
+			CampoObligatorioExcepcion, CampoInesperadoExepcion, ClienteExisteExcepcion;
 
-	public Either<Exception, Respuesta> eliminarCliente(Long identificacion);
+	public void eliminarCliente(Long identificacion) throws ClienteNoEncontradoExcepcion;
 }

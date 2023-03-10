@@ -18,11 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.co.prueba.datatransfer.MovimientosRequest;
 import com.co.prueba.datatransfer.MovimientosResponse;
-import com.co.prueba.datatransfer.Respuesta;
-import com.co.prueba.service.ErrorService;
+import com.co.prueba.exception.CuentaNoEncontradaExcepcion;
+import com.co.prueba.exception.CuentaSaldoInicialExcepcion;
 import com.co.prueba.service.MovimientosService;
-
-import fj.data.Either;
 
 @EnableAutoConfiguration
 @CrossOrigin(origins = "*")
@@ -34,36 +32,21 @@ public class MovimientosController {
 	@Autowired
 	private MovimientosService movimientosService;
 
-	@Autowired
-	private ErrorService errorService;
+	@GetMapping(value = "/")
+	public ResponseEntity<?> consultarMovimiento(@RequestParam Long numeroCuenta) throws CuentaNoEncontradaExcepcion {
 
-	@GetMapping(value = "/consultarMovimiento")
-	public ResponseEntity<?> consultarMovimiento(@RequestParam Long numeroCuenta) {
+		List<MovimientosResponse> listMovimientoResponse = movimientosService.consultarMovimiento(numeroCuenta);
 
-		Either<Exception, List<MovimientosResponse>> resultEither = movimientosService
-				.consultarMovimiento(numeroCuenta);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		return new ResponseEntity<>(listMovimientoResponse, HttpStatus.OK);
 	}
 
-	@PostMapping(value = "/crearMovimiento")
-	public ResponseEntity<?> crearMovimiento(@RequestBody MovimientosRequest movimientoRequest) throws ParseException {
+	@PostMapping(value = "/")
+	public ResponseEntity<?> crearMovimiento(@RequestBody MovimientosRequest movimientoRequest)
+			throws ParseException, CuentaNoEncontradaExcepcion, CuentaSaldoInicialExcepcion {
 
-		Either<Exception, Respuesta> resultEither = movimientosService.crearMovimiento(movimientoRequest);
+		movimientosService.crearMovimiento(movimientoRequest);
+		return new ResponseEntity<>("Movimiento creado con exito", HttpStatus.CREATED);
 
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
 	}
 
 }

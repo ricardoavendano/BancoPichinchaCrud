@@ -1,7 +1,7 @@
 package com.co.prueba.service.imp;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -13,18 +13,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 
 import com.co.prueba.datatransfer.ClienteRequest;
-import com.co.prueba.datatransfer.Respuesta;
 import com.co.prueba.domain.Cliente;
 import com.co.prueba.domain.Persona;
+import com.co.prueba.exception.CampoInesperadoExepcion;
+import com.co.prueba.exception.CampoObligatorioExcepcion;
+import com.co.prueba.exception.ClienteExisteExcepcion;
+import com.co.prueba.exception.ClienteNoEncontradoExcepcion;
 import com.co.prueba.repository.ClienteRepository;
 import com.co.prueba.repository.PersonaRepository;
-import com.co.prueba.service.ErrorService;
 import com.co.prueba.service.impl.ClienteServiceImp;
-
-import fj.data.Either;
 
 @ExtendWith(MockitoExtension.class)
 class ClienteServiceImpTest {
@@ -39,33 +38,31 @@ class ClienteServiceImpTest {
 	private PersonaRepository personaRepository;
 
 	@Test
-	void deberiaConsultarClienteExitoso() {
+	void deberiaConsultarClienteExitoso() throws ClienteNoEncontradoExcepcion {
 
 		Persona persona = getPersona();
 
 		when(personaRepository.findPersonaIdentificacion(any())).thenReturn(persona);
 
-		Either<Exception, ClienteRequest> res = clienteServiceImp.consultarCliente(Long.valueOf(12345));
+		ClienteRequest res = clienteServiceImp.consultarCliente(Long.valueOf(12345));
 
-		assertTrue(res.isRight());
+		assertEquals(Long.valueOf(12345), res.getIdentificacion());
 	}
 
 	@Test
-	void deberiaArrojarExcepcionAlConsultarCliente() {
+	void deberiaArrojarExcepcionAlConsultarCliente() throws ClienteNoEncontradoExcepcion {
 
 		when(personaRepository.findPersonaIdentificacion(any())).thenReturn(null);
 
-		Either<Exception, ClienteRequest> res = clienteServiceImp.consultarCliente(Long.valueOf(12345));
+		assertThrows(ClienteNoEncontradoExcepcion.class, () -> {
+			clienteServiceImp.consultarCliente(Long.valueOf(12345));
+		});
 
-		ErrorService errorService = new ErrorService();
-		Respuesta error = errorService.getError(res.left().value());
-
-		assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
-		assertTrue(res.isLeft());
 	}
 
 	@Test
-	void deberiaCrearClienteExitoso() {
+	void deberiaCrearClienteExitoso()
+			throws ClienteExisteExcepcion, CampoObligatorioExcepcion, CampoInesperadoExepcion {
 
 		Persona persona = getPersona();
 
@@ -83,13 +80,13 @@ class ClienteServiceImpTest {
 		when(personaRepository.save(any())).thenReturn(persona);
 		when(clienteRepository.save(any())).thenReturn(null);
 
-		Either<Exception, Respuesta> res = clienteServiceImp.crearCliente(clienteRequest);
+		clienteServiceImp.crearCliente(clienteRequest);
 
-		assertTrue(res.isRight());
 	}
 
 	@Test
-	void deberiaArrojarExcepcionAlCrearCliente() {
+	void deberiaArrojarExcepcionAlCrearCliente()
+			throws ClienteExisteExcepcion, CampoObligatorioExcepcion, CampoInesperadoExepcion {
 
 		ClienteRequest clienteRequest = new ClienteRequest();
 		clienteRequest.setContrasena("contrasena");
@@ -101,46 +98,36 @@ class ClienteServiceImpTest {
 		clienteRequest.setNombre("Ricardo");
 		clienteRequest.setTelefono(Long.valueOf(98765));
 
-		Either<Exception, Respuesta> res = clienteServiceImp.crearCliente(clienteRequest);
+		assertThrows(CampoInesperadoExepcion.class, () -> {
+			clienteServiceImp.crearCliente(clienteRequest);
+		});
 
-		ErrorService errorService = new ErrorService();
-		Respuesta error = errorService.getError(res.left().value());
-
-		assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
-		assertTrue(res.isLeft());
 	}
 
 	@Test
-	void deberiaActualizarDireccionClienteExitoso() {
+	void deberiaActualizarDireccionClienteExitoso() throws ClienteNoEncontradoExcepcion {
 
 		Persona persona = getPersona();
 
 		when(personaRepository.findPersonaIdentificacion(any())).thenReturn(persona);
 		when(personaRepository.save(any())).thenReturn(persona);
 
-		Either<Exception, Respuesta> res = clienteServiceImp.actualizarDireccionCliente("direccion",
-				Long.valueOf(12345));
-
-		assertTrue(res.isRight());
+		clienteServiceImp.actualizarDireccionCliente("direccion", Long.valueOf(12345));
 	}
 
 	@Test
-	void deberiaArrojarExcepcionAlActualizarDireccionCliente() {
+	void deberiaArrojarExcepcionAlActualizarDireccionCliente() throws ClienteNoEncontradoExcepcion {
 
 		when(personaRepository.findPersonaIdentificacion(any())).thenReturn(null);
 
-		Either<Exception, Respuesta> res = clienteServiceImp.actualizarDireccionCliente("direccion",
-				Long.valueOf(12345));
-
-		ErrorService errorService = new ErrorService();
-		Respuesta error = errorService.getError(res.left().value());
-
-		assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
-		assertTrue(res.isLeft());
+		assertThrows(ClienteNoEncontradoExcepcion.class, () -> {
+			clienteServiceImp.actualizarDireccionCliente("direccion", Long.valueOf(12345));
+		});
 	}
 
 	@Test
-	void deberiaActualizarClienteExitoso() {
+	void deberiaActualizarClienteExitoso() throws ClienteNoEncontradoExcepcion, CampoObligatorioExcepcion,
+			CampoInesperadoExepcion, ClienteExisteExcepcion {
 
 		Persona persona = getPersona();
 
@@ -157,13 +144,12 @@ class ClienteServiceImpTest {
 		when(personaRepository.findPersonaIdentificacion(any())).thenReturn(persona);
 		when(personaRepository.save(any())).thenReturn(persona);
 
-		Either<Exception, Respuesta> res = clienteServiceImp.actualizarCliente(clienteRequest);
-
-		assertTrue(res.isRight());
+		clienteServiceImp.actualizarCliente(clienteRequest);
 	}
 
 	@Test
-	void deberiaArrojarExcepcionAlActualizarCliente() {
+	void deberiaArrojarExcepcionAlActualizarCliente() throws ClienteNoEncontradoExcepcion, CampoObligatorioExcepcion,
+			CampoInesperadoExepcion, ClienteExisteExcepcion {
 
 		ClienteRequest clienteRequest = new ClienteRequest();
 		clienteRequest.setContrasena("contrasena");
@@ -175,39 +161,30 @@ class ClienteServiceImpTest {
 		clienteRequest.setNombre("Ricardo");
 		clienteRequest.setTelefono(Long.valueOf(98765));
 
-		Either<Exception, Respuesta> res = clienteServiceImp.actualizarCliente(clienteRequest);
-
-		ErrorService errorService = new ErrorService();
-		Respuesta error = errorService.getError(res.left().value());
-
-		assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
-		assertTrue(res.isLeft());
+		assertThrows(CampoInesperadoExepcion.class, () -> {
+			clienteServiceImp.actualizarCliente(clienteRequest);
+		});
 	}
 
 	@Test
-	void deberiaEliminarClienteExitoso() {
+	void deberiaEliminarClienteExitoso() throws ClienteNoEncontradoExcepcion {
 
 		Persona persona = getPersona();
 
 		when(personaRepository.findPersonaIdentificacion(any())).thenReturn(persona);
 		doNothing().when(personaRepository).delete(any());
 
-		Either<Exception, Respuesta> res = clienteServiceImp.eliminarCliente(Long.valueOf(12345));
-
-		assertTrue(res.isRight());
+		clienteServiceImp.eliminarCliente(Long.valueOf(12345));
 	}
 
 	@Test
-	void deberiaArrojarExcepcionAlEliminarCliente() {
+	void deberiaArrojarExcepcionAlEliminarCliente() throws ClienteNoEncontradoExcepcion {
 
 		when(personaRepository.findPersonaIdentificacion(any())).thenReturn(null);
-		Either<Exception, Respuesta> res = clienteServiceImp.eliminarCliente(Long.valueOf(12345));
 
-		ErrorService errorService = new ErrorService();
-		Respuesta error = errorService.getError(res.left().value());
-
-		assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
-		assertTrue(res.isLeft());
+		assertThrows(ClienteNoEncontradoExcepcion.class, () -> {
+			clienteServiceImp.eliminarCliente(Long.valueOf(12345));
+		});
 	}
 
 	private Persona getPersona() {

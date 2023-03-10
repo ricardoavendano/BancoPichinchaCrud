@@ -17,11 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.co.prueba.datatransfer.MovimientosResponse;
-import com.co.prueba.datatransfer.Respuesta;
-import com.co.prueba.service.ErrorService;
+import com.co.prueba.exception.CuentaNoEncontradaExcepcion;
 import com.co.prueba.service.MovimientosService;
-
-import fj.data.Either;
 
 @EnableAutoConfiguration
 @CrossOrigin(origins = "*")
@@ -33,24 +30,16 @@ public class ReporteController {
 	@Autowired
 	private MovimientosService movimientosService;
 
-	@Autowired
-	private ErrorService errorService;
-
 	@GetMapping(value = "/consultarMovimientoFecha")
 	public ResponseEntity<?> consultarMovimiento(@RequestParam Long numeroCuenta,
 			@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaInicial,
-			@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaFinal) throws ParseException {
+			@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaFinal)
+			throws ParseException, CuentaNoEncontradaExcepcion {
 
-		Either<Exception, List<MovimientosResponse>> resultEither = movimientosService
-				.consultarMovimientoFecha(numeroCuenta, fechaInicial, fechaFinal);
+		List<MovimientosResponse> listMovimientoResponse = movimientosService.consultarMovimientoFecha(numeroCuenta,
+				fechaInicial, fechaFinal);
 
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		return new ResponseEntity<>(listMovimientoResponse, HttpStatus.OK);
 	}
 
 }

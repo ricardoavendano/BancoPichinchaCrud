@@ -10,26 +10,28 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.co.prueba.datatransfer.CuentaRequest;
 import com.co.prueba.datatransfer.MovimientosDTO;
 import com.co.prueba.datatransfer.MovimientosRequest;
 import com.co.prueba.datatransfer.MovimientosResponse;
-import com.co.prueba.datatransfer.Respuesta;
 import com.co.prueba.domain.Cuenta;
 import com.co.prueba.domain.Movimientos;
-import com.co.prueba.exception.ControlException;
+import com.co.prueba.exception.CuentaNoEncontradaExcepcion;
+import com.co.prueba.exception.CuentaSaldoInicialExcepcion;
 import com.co.prueba.repository.CuentaRepository;
 import com.co.prueba.repository.MovimientosRepository;
 import com.co.prueba.service.MovimientosService;
 
-import fj.data.Either;
-
 @Service
 public class MovimientosServiceImpl implements MovimientosService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(MovimientosServiceImpl.class);
 
 	@Autowired
 	private CuentaRepository cuentaRepository;
@@ -40,13 +42,12 @@ public class MovimientosServiceImpl implements MovimientosService {
 	private static final String DATE_FORMAT = "yyyy-MM-dd";
 
 	@Override
-	public Either<Exception, List<MovimientosResponse>> consultarMovimiento(Long numeroCuenta) {
+	public List<MovimientosResponse> consultarMovimiento(Long numeroCuenta) throws CuentaNoEncontradaExcepcion {
 
 		Cuenta cuenta = cuentaRepository.findCuenta(numeroCuenta);
 
 		if (null == cuenta) {
-			return Either.left(
-					new ControlException("Número de cuenta: " + numeroCuenta + " no existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaNoEncontradaExcepcion("Número de cuenta: " + numeroCuenta + " no existe");
 		}
 
 		List<MovimientosResponse> listMovimientos = new ArrayList<>();
@@ -58,17 +59,16 @@ public class MovimientosServiceImpl implements MovimientosService {
 		}
 
 		listMovimientos.add(movimientosResponse);
-		return Either.right(listMovimientos);
+		return listMovimientos;
 	}
 
 	@Override
-	public Either<Exception, List<MovimientosResponse>> consultarMovimientoFecha(Long numeroCuenta, Date fechaInicial,
-			Date fechaFinal) throws ParseException {
+	public List<MovimientosResponse> consultarMovimientoFecha(Long numeroCuenta, Date fechaInicial, Date fechaFinal)
+			throws ParseException, CuentaNoEncontradaExcepcion {
 		Cuenta cuenta = cuentaRepository.findCuenta(numeroCuenta);
 
 		if (null == cuenta) {
-			return Either.left(
-					new ControlException("Número de cuenta: " + numeroCuenta + " no existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaNoEncontradaExcepcion("Número de cuenta: " + numeroCuenta + " no existe");
 		}
 
 		List<MovimientosResponse> listMovimientos = new ArrayList<>();
@@ -102,17 +102,19 @@ public class MovimientosServiceImpl implements MovimientosService {
 		}
 
 		listMovimientos.add(movimientosResponse);
-		return Either.right(listMovimientos);
+		return listMovimientos;
 	}
 
 	@Override
-	public Either<Exception, Respuesta> crearMovimiento(MovimientosRequest movimientoRequest) throws ParseException {
+	@Transactional
+	public void crearMovimiento(MovimientosRequest movimientoRequest)
+			throws ParseException, CuentaNoEncontradaExcepcion, CuentaSaldoInicialExcepcion {
 
 		Cuenta cuenta = cuentaRepository.findCuenta(movimientoRequest.getNumeroCuenta());
 
 		if (null == cuenta) {
-			return Either.left(new ControlException(
-					"Número de cuenta: " + movimientoRequest.getNumeroCuenta() + " no existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaNoEncontradaExcepcion(
+					"Número de cuenta: " + movimientoRequest.getNumeroCuenta() + " no existe");
 		}
 
 		MovimientosResponse movimientosResponse = mapearDatosCuenta(cuenta);
@@ -132,7 +134,7 @@ public class MovimientosServiceImpl implements MovimientosService {
 		saldo = saldo + movimientoRequest.getValor();
 
 		if (saldo < 0) {
-			return Either.left(new ControlException("Saldo no disponible", HttpStatus.BAD_REQUEST));
+			throw new CuentaSaldoInicialExcepcion("Saldo no disponible");
 		}
 
 		Movimientos movimientos = new Movimientos();
@@ -153,9 +155,9 @@ public class MovimientosServiceImpl implements MovimientosService {
 		movimientos.setValor(movimientoRequest.getValor());
 		movimientos.setIdCuentaPK(cuenta);
 		movimientosRepository.save(movimientos);
-
-		Respuesta respuesta = new Respuesta("200", "Movimiento creado con exito", HttpStatus.OK);
-		return Either.right(respuesta);
+		LOGGER.info("{} Realizado exitosamente para la cuenta {} por valor de {}, saldo disponible {}",
+				movimientos.getTipoMovimiento(), movimientoRequest.getNumeroCuenta(), movimientoRequest.getValor(),
+				saldo);
 	}
 
 	private MovimientosResponse mapearDatosCuenta(Cuenta cuenta) {

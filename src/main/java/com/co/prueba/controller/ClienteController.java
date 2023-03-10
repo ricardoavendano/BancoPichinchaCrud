@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.co.prueba.datatransfer.ClienteRequest;
-import com.co.prueba.datatransfer.Respuesta;
+import com.co.prueba.exception.CampoInesperadoExepcion;
+import com.co.prueba.exception.CampoObligatorioExcepcion;
+import com.co.prueba.exception.ClienteExisteExcepcion;
+import com.co.prueba.exception.ClienteNoEncontradoExcepcion;
 import com.co.prueba.service.ClienteService;
-import com.co.prueba.service.ErrorService;
-
-import fj.data.Either;
 
 @EnableAutoConfiguration
 @CrossOrigin(origins = "*")
@@ -33,77 +33,45 @@ public class ClienteController {
 	@Autowired
 	private ClienteService clienteService;
 
-	@Autowired
-	private ErrorService errorService;
+	@GetMapping(value = "/")
+	public ResponseEntity<?> consultarCliente(@RequestParam Long identificacion) throws ClienteNoEncontradoExcepcion {
 
-	@GetMapping(value = "/consultarCliente")
-	public ResponseEntity<?> consultarCliente(@RequestParam Long identificacion) {
+		ClienteRequest clienteRequest = clienteService.consultarCliente(identificacion);
+		return new ResponseEntity<>(clienteRequest, HttpStatus.OK);
 
-		Either<Exception, ClienteRequest> resultEither = clienteService.consultarCliente(identificacion);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
 	}
 
-	@PostMapping(value = "/crearCliente")
-	public ResponseEntity<?> crearCliente(@RequestBody ClienteRequest clienteRequest) {
+	@PostMapping(value = "/")
+	public ResponseEntity<?> crearCliente(@RequestBody ClienteRequest clienteRequest)
+			throws ClienteExisteExcepcion, CampoObligatorioExcepcion, CampoInesperadoExepcion {
 
-		Either<Exception, Respuesta> resultEither = clienteService.crearCliente(clienteRequest);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		clienteService.crearCliente(clienteRequest);
+		return new ResponseEntity<>("Cliente creado con exito", HttpStatus.CREATED);
 	}
 
-	@PutMapping(value = "/actualizarCliente")
-	public ResponseEntity<?> actualizarCliente(@RequestBody ClienteRequest clienteRequest) {
+	@PutMapping(value = "/")
+	public ResponseEntity<?> actualizarCliente(@RequestBody ClienteRequest clienteRequest)
+			throws ClienteNoEncontradoExcepcion, CampoObligatorioExcepcion, CampoInesperadoExepcion,
+			ClienteExisteExcepcion {
 
-		Either<Exception, Respuesta> resultEither = clienteService.actualizarCliente(clienteRequest);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		clienteService.actualizarCliente(clienteRequest);
+		return new ResponseEntity<>("Cliente actualizado con exito", HttpStatus.OK);
 	}
 
 	@PatchMapping(value = "/actualizarDireccion")
-	public ResponseEntity<?> actualizarDireccion(@RequestParam String direccion, @RequestBody Long identificacion) {
+	public ResponseEntity<?> actualizarDireccion(@RequestParam String direccion, @RequestBody Long identificacion)
+			throws ClienteNoEncontradoExcepcion {
 
-		Either<Exception, Respuesta> resultEither = clienteService.actualizarDireccionCliente(direccion,
-				identificacion);
+		clienteService.actualizarDireccionCliente(direccion, identificacion);
 
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		return new ResponseEntity<>("Dirección del cliente actualizada con exito", HttpStatus.OK);
 	}
 
-	@DeleteMapping(value = "/eliminarCliente")
-	public ResponseEntity<?> eliminarCliente(@RequestParam Long identificacion) {
+	@DeleteMapping(value = "/")
+	public ResponseEntity<?> eliminarCliente(@RequestParam Long identificacion) throws ClienteNoEncontradoExcepcion {
 
-		Either<Exception, Respuesta> resultEither = clienteService.eliminarCliente(identificacion);
+		clienteService.eliminarCliente(identificacion);
 
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		return new ResponseEntity<>("Cliente eliminado con exito", HttpStatus.OK);
 	}
 }

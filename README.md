@@ -13,12 +13,12 @@ Ricardo Avendaño Casas
 7. Manejo de errores y excepciones
 8. Uso Docker compose
 
-## Para ejecutar el proyecto localmente (sin Docker) se deben realizar los siguientes pasos
-1. Descargar fuente de github: git clone https://github.com/ricardoavendano/BancoPichinchaCrud.git
+## Para ejecutar el proyecto localmente (sin Docker)se deben realizar los siguientes pasos
+1. Descargar fuente de github: git clone git clone https://github.com/ricardoavendano/BancoPichinchaCrud.git
 2. Ir al directorio donde se encuentra el fuente y crear jar: mvn clean install (se crea la carpeta target)
 3. Ir al directorio donde se encuentra el fuente y dirigirse a la carpeta target; por línea de comandos ejecutar jar: java -jar prueba-0.0.1-SNAPSHOT.jar
 
-## Para ejecutar el proyecto con Docker compose se deben realizar los siguientes pasos
+## Para ejecutar el proyecto con Docker compuse se deben realizar los siguientes pasos
 1. Descargar fuente de github: git clone git clone https://github.com/ricardoavendano/BancoPichinchaCrud.git
 2. Ir al directorio donde se encuentra el fuente y crear jar: mvn clean install (se crea la carpeta target)
 3. Ejecutar para levantar la imagen Docker
@@ -43,7 +43,7 @@ docker-compose down
     http://localhost:8080/pruebaBPichincha/swagger-ui.html#/
 
 
-## Collección Postman
+## Collección Postman (se encuentra en el proyecto: BancoPichincha.postman_collection.json)
 
 ```bash
 {
@@ -56,6 +56,38 @@ docker-compose down
         {
             "name": "Cuentas",
             "item": [
+                {
+                    "name": "cuentas/consultarCuenta",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "accept",
+                                "value": "*/*"
+                            }
+                        ],
+                        "url": {
+                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/?numeroCuenta=555555",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "8080",
+                            "path": [
+                                "pruebaBPichincha",
+                                "cuentas",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "numeroCuenta",
+                                    "value": "555555"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
                 {
                     "name": "cuentas/crearCuenta",
                     "request": {
@@ -72,10 +104,10 @@ docker-compose down
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"estadoCuenta\": true,\n    \"identificacionCliente\": 123456,\n    \"numeroCuenta\": 222222,\n    \"saldoInicialCuenta\": 500,\n    \"tipoCuenta\": \"Ahorros\"\n}"
+                            "raw": "{\n    \"estadoCuenta\": true,\n    \"identificacionCliente\": 345678,\n    \"numeroCuenta\": 888888,\n    \"saldoInicialCuenta\": 500,\n    \"tipoCuenta\": \"Ahorros\"\n}"
                         },
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/crearCuenta",
+                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -84,7 +116,7 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "cuentas",
-                                "crearCuenta"
+                                ""
                             ]
                         }
                     },
@@ -149,7 +181,7 @@ docker-compose down
                             "raw": "{\n    \"estadoCuenta\": false,\n    \"identificacionCliente\": 234567,\n    \"numeroCuenta\": 888888,\n    \"saldoInicialCuenta\": 100,\n    \"tipoCuenta\": \"Ahorros\"\n}"
                         },
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/actualizarCuenta",
+                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -158,7 +190,7 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "cuentas",
-                                "actualizarCuenta"
+                                ""
                             ]
                         }
                     },
@@ -170,7 +202,7 @@ docker-compose down
                         "method": "DELETE",
                         "header": [],
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/eliminarCuenta?numeroCuenta=888888",
+                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/?numeroCuenta=888888",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -179,39 +211,7 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "cuentas",
-                                "eliminarCuenta"
-                            ],
-                            "query": [
-                                {
-                                    "key": "numeroCuenta",
-                                    "value": "888888"
-                                }
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "cuentas/consultarCuenta",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "accept",
-                                "value": "*/*"
-                            }
-                        ],
-                        "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/cuentas/consultarCuenta?numeroCuenta=888888",
-                            "protocol": "http",
-                            "host": [
-                                "localhost"
-                            ],
-                            "port": "8080",
-                            "path": [
-                                "pruebaBPichincha",
-                                "cuentas",
-                                "consultarCuenta"
+                                ""
                             ],
                             "query": [
                                 {
@@ -234,7 +234,7 @@ docker-compose down
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/consultarCliente?identificacion=12345",
+                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/?identificacion=123456",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -243,12 +243,12 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "clientes",
-                                "consultarCliente"
+                                ""
                             ],
                             "query": [
                                 {
                                     "key": "identificacion",
-                                    "value": "12345"
+                                    "value": "123456"
                                 }
                             ]
                         }
@@ -274,7 +274,7 @@ docker-compose down
                             "raw": "{\n    \"contrasena\": \"contrasena_nueva\",\n    \"direccion\": \"direccion 4\",\n    \"edad\": 32,\n    \"estado\": true,\n    \"genero\": \"Masculino\",\n    \"identificacion\": 456789,\n    \"nombre\": \"Ricardo Avendano\",\n    \"telefono\": 98765432\n}"
                         },
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/crearCliente",
+                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -283,7 +283,7 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "clientes",
-                                "crearCliente"
+                                ""
                             ]
                         }
                     },
@@ -348,7 +348,7 @@ docker-compose down
                             "raw": "{\n    \"contrasena\": \"contrasena_nueva\",\n    \"direccion\": \"direccion 4\",\n    \"edad\": 32,\n    \"estado\": true,\n    \"genero\": \"Masculino\",\n    \"identificacion\": 123456,\n    \"nombre\": \"Ricardo Avendano\",\n    \"telefono\": 98765432\n}"
                         },
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/actualizarCliente",
+                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -357,7 +357,7 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "clientes",
-                                "actualizarCliente"
+                                ""
                             ]
                         }
                     },
@@ -374,7 +374,7 @@ docker-compose down
                             }
                         ],
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/eliminarCliente?identificacion=123456",
+                            "raw": "http://localhost:8080/pruebaBPichincha/clientes/?identificacion=123456",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -383,7 +383,7 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "clientes",
-                                "eliminarCliente"
+                                ""
                             ],
                             "query": [
                                 {
@@ -411,7 +411,7 @@ docker-compose down
                             }
                         ],
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/movimientos/consultarMovimiento?numeroCuenta=0",
+                            "raw": "http://localhost:8080/pruebaBPichincha/movimientos/?numeroCuenta=555555",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -420,12 +420,12 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "movimientos",
-                                "consultarMovimiento"
+                                ""
                             ],
                             "query": [
                                 {
                                     "key": "numeroCuenta",
-                                    "value": "0"
+                                    "value": "555555"
                                 }
                             ]
                         }
@@ -448,10 +448,10 @@ docker-compose down
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"numeroCuenta\": 0,\n    \"valor\": 0\n}"
+                            "raw": "{\n    \"numeroCuenta\": 555555,\n    \"valor\": 10\n}"
                         },
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/movimientos/crearMovimiento",
+                            "raw": "http://localhost:8080/pruebaBPichincha/movimientos/",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -460,7 +460,7 @@ docker-compose down
                             "path": [
                                 "pruebaBPichincha",
                                 "movimientos",
-                                "crearMovimiento"
+                                ""
                             ]
                         }
                     },
@@ -477,7 +477,7 @@ docker-compose down
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "http://localhost:8080/pruebaBPichincha/reportes/consultarMovimientoFecha?numeroCuenta=999999&fechaInicial=2023-03-01&fechaFinal=2023-03-07",
+                            "raw": "http://localhost:8080/pruebaBPichincha/reportes/consultarMovimientoFecha?numeroCuenta=555555&fechaInicial=2023-03-01&fechaFinal=2023-03-07",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -491,7 +491,7 @@ docker-compose down
                             "query": [
                                 {
                                     "key": "numeroCuenta",
-                                    "value": "999999"
+                                    "value": "555555"
                                 },
                                 {
                                     "key": "fechaInicial",

@@ -17,11 +17,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.co.prueba.datatransfer.CuentaRequest;
-import com.co.prueba.datatransfer.Respuesta;
+import com.co.prueba.exception.CampoInesperadoExepcion;
+import com.co.prueba.exception.CampoObligatorioExcepcion;
+import com.co.prueba.exception.ClienteInactivoExcepcion;
+import com.co.prueba.exception.ClienteNoEncontradoExcepcion;
+import com.co.prueba.exception.CuentaExisteExcepcion;
+import com.co.prueba.exception.CuentaNoEncontradaExcepcion;
+import com.co.prueba.exception.CuentaSaldoInicialExcepcion;
 import com.co.prueba.service.CuentaService;
-import com.co.prueba.service.ErrorService;
-
-import fj.data.Either;
 
 @EnableAutoConfiguration
 @CrossOrigin(origins = "*")
@@ -33,76 +36,42 @@ public class CuentaController {
 	@Autowired
 	private CuentaService cuentaService;
 
-	@Autowired
-	private ErrorService errorService;
+	@GetMapping(value = "/")
+	public ResponseEntity<?> consultarCuenta(@RequestParam Long numeroCuenta) throws CuentaNoEncontradaExcepcion {
 
-	@GetMapping(value = "/consultarCuenta")
-	public ResponseEntity<?> consultarCuenta(@RequestParam Long numeroCuenta) {
-
-		Either<Exception, CuentaRequest> resultEither = cuentaService.consultarCuenta(numeroCuenta);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		CuentaRequest cuentaRequest = cuentaService.consultarCuenta(numeroCuenta);
+		return new ResponseEntity<>(cuentaRequest, HttpStatus.OK);
 	}
 
-	@PostMapping(value = "/crearCuenta")
-	public ResponseEntity<?> crearCuenta(@RequestBody CuentaRequest cuentaRequest) {
+	@PostMapping(value = "/")
+	public ResponseEntity<?> crearCuenta(@RequestBody CuentaRequest cuentaRequest) throws CampoObligatorioExcepcion,
+			ClienteNoEncontradoExcepcion, ClienteInactivoExcepcion, CuentaExisteExcepcion, CampoInesperadoExepcion {
 
-		Either<Exception, Respuesta> resultEither = cuentaService.crearCuenta(cuentaRequest);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		cuentaService.crearCuenta(cuentaRequest);
+		return new ResponseEntity<>("Cuenta creada con exito", HttpStatus.CREATED);
 	}
 
-	@PutMapping(value = "/actualizarCuenta")
-	public ResponseEntity<?> actualizarCuenta(@RequestBody CuentaRequest cuentaRequest) {
+	@PutMapping(value = "/")
+	public ResponseEntity<?> actualizarCuenta(@RequestBody CuentaRequest cuentaRequest)
+			throws CampoObligatorioExcepcion, CuentaNoEncontradaExcepcion, ClienteNoEncontradoExcepcion,
+			CuentaSaldoInicialExcepcion, CampoInesperadoExepcion {
 
-		Either<Exception, Respuesta> resultEither = cuentaService.actualizarCuenta(cuentaRequest);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		cuentaService.actualizarCuenta(cuentaRequest);
+		return new ResponseEntity<>("Cuenta actualizada con exito", HttpStatus.OK);
 	}
 
 	@PatchMapping(value = "/actualizarEstado")
-	public ResponseEntity<?> actualizarEstado(@RequestParam Boolean estado, @RequestBody Long numeroCuenta) {
+	public ResponseEntity<?> actualizarEstado(@RequestParam Boolean estado, @RequestBody Long numeroCuenta)
+			throws CuentaNoEncontradaExcepcion {
 
-		Either<Exception, Respuesta> resultEither = cuentaService.actualizarEstadoCuenta(estado, numeroCuenta);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		cuentaService.actualizarEstadoCuenta(estado, numeroCuenta);
+		return new ResponseEntity<>("Estado de la cuenta actualizado con exito", HttpStatus.OK);
 	}
 
-	@DeleteMapping(value = "/eliminarCuenta")
-	public ResponseEntity<?> eliminarCuenta(@RequestParam Long numeroCuenta) {
+	@DeleteMapping(value = "/")
+	public ResponseEntity<?> eliminarCuenta(@RequestParam Long numeroCuenta) throws CuentaNoEncontradaExcepcion {
 
-		Either<Exception, Respuesta> resultEither = cuentaService.eliminarCuenta(numeroCuenta);
-
-		if (resultEither.isRight()) {
-			return new ResponseEntity<>(resultEither.right().value(), HttpStatus.OK);
-		}
-
-		Respuesta error = errorService.getError(resultEither.left().value());
-
-		return new ResponseEntity<>(error, error.getStatus());
+		cuentaService.eliminarCuenta(numeroCuenta);
+		return new ResponseEntity<>("Cuenta eliminada con exito", HttpStatus.OK);
 	}
 }

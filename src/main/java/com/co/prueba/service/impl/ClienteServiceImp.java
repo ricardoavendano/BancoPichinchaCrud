@@ -3,23 +3,27 @@ package com.co.prueba.service.impl;
 import java.util.ArrayList;
 import java.util.Base64;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.co.prueba.datatransfer.ClienteRequest;
-import com.co.prueba.datatransfer.Respuesta;
 import com.co.prueba.domain.Cliente;
 import com.co.prueba.domain.Persona;
-import com.co.prueba.exception.ControlException;
+import com.co.prueba.exception.CampoInesperadoExepcion;
+import com.co.prueba.exception.CampoObligatorioExcepcion;
+import com.co.prueba.exception.ClienteExisteExcepcion;
+import com.co.prueba.exception.ClienteNoEncontradoExcepcion;
 import com.co.prueba.repository.ClienteRepository;
 import com.co.prueba.repository.PersonaRepository;
 import com.co.prueba.service.ClienteService;
 
-import fj.data.Either;
-
 @Service
 public class ClienteServiceImp implements ClienteService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClienteServiceImp.class);
 
 	@Autowired
 	private ClienteRepository clienteRepository;
@@ -28,13 +32,13 @@ public class ClienteServiceImp implements ClienteService {
 	private PersonaRepository personaRepository;
 
 	@Override
-	public Either<Exception, ClienteRequest> consultarCliente(Long identificacion) {
+	public ClienteRequest consultarCliente(Long identificacion) throws ClienteNoEncontradoExcepcion {
 
 		Persona persona = personaRepository.findPersonaIdentificacion(identificacion);
 
 		if (null == persona) {
-			return Either.left(new ControlException(
-					"Cliente con número de identificacion: " + identificacion + " no existe", HttpStatus.BAD_REQUEST));
+			throw new ClienteNoEncontradoExcepcion(
+					"Cliente con número de identificacion: " + identificacion + " no existe");
 		}
 
 		ClienteRequest clienteRequest = new ClienteRequest();
@@ -47,33 +51,91 @@ public class ClienteServiceImp implements ClienteService {
 		clienteRequest.setNombre(persona.getNombre());
 		clienteRequest.setTelefono(persona.getTelefono());
 
-		return Either.right(clienteRequest);
+		return clienteRequest;
 	}
 
 	@Override
-	public Either<Exception, Respuesta> crearCliente(ClienteRequest clienteRequest) {
+	@Transactional
+	public void crearCliente(ClienteRequest clienteRequest)
+			throws ClienteExisteExcepcion, CampoObligatorioExcepcion, CampoInesperadoExepcion {
 
-		if (validarRequest(clienteRequest)) {
-			return Either.left(new ControlException("Revise el request, todos los campos son obligatorios",
-					HttpStatus.BAD_REQUEST));
-		}
-
-		if (clienteRequest.getEdad().equals(Long.valueOf(0))) {
-			return Either.left(new ControlException("La edad del cliente no puede ser 0", HttpStatus.BAD_REQUEST));
-		}
-
-		if (!clienteRequest.getGenero().equals("Masculino") && !clienteRequest.getGenero().equals("Femenino")) {
-			return Either.left(new ControlException("El genero debe ser Masculino o Femenino", HttpStatus.BAD_REQUEST));
-		}
+		validarCamposCliente(clienteRequest);
 
 		Persona persona = personaRepository.findPersonaIdentificacion(clienteRequest.getIdentificacion());
 
 		if (null != persona) {
-			return Either.left(new ControlException(
-					"Cliente con número de identificacion: " + clienteRequest.getIdentificacion() + " ya existe",
-					HttpStatus.BAD_REQUEST));
+			throw new ClienteExisteExcepcion(
+					"Cliente con número de identificacion: " + clienteRequest.getIdentificacion() + " ya existe");
 		}
 
+		mapearCliente(clienteRequest);
+		LOGGER.info("Cliente con identificación {} creado con exito", clienteRequest.getIdentificacion());
+	}
+
+	@Override
+	@Transactional
+	public void actualizarDireccionCliente(String direccion, Long identificacion) throws ClienteNoEncontradoExcepcion {
+
+		Persona persona = personaRepository.findPersonaIdentificacion(identificacion);
+
+		if (null == persona) {
+			throw new ClienteNoEncontradoExcepcion(
+					"Cliente con número de identificacion: " + identificacion + " no existe");
+		}
+
+		persona.setDireccion(direccion);
+		personaRepository.save(persona);
+		LOGGER.info("Dirección {} actualizada con exito para el cliente {}", direccion, identificacion);
+	}
+
+	@Override
+	@Transactional
+	public void actualizarCliente(ClienteRequest clienteRequest) throws ClienteNoEncontradoExcepcion,
+			CampoObligatorioExcepcion, CampoInesperadoExepcion, ClienteExisteExcepcion {
+
+		validarCamposCliente(clienteRequest);
+
+		Persona persona = personaRepository.findPersonaIdentificacion(clienteRequest.getIdentificacion());
+
+		if (null == persona) {
+			throw new ClienteNoEncontradoExcepcion(
+					"Cliente con número de identificacion: " + clienteRequest.getIdentificacion() + " no existe");
+		}
+
+		persona.setDireccion(clienteRequest.getDireccion());
+		persona.setEdad(clienteRequest.getEdad());
+		persona.setGenero(clienteRequest.getGenero());
+		persona.setIdentificacion(clienteRequest.getIdentificacion());
+		persona.setNombre(clienteRequest.getNombre());
+		persona.setTelefono(clienteRequest.getTelefono());
+
+		persona.getCliente()
+				.setContrasena(Base64.getEncoder().encodeToString(clienteRequest.getContrasena().getBytes()));
+		persona.getCliente().setEstado(clienteRequest.getEstado());
+		persona.getCliente().setidPersonaPK(persona);
+		personaRepository.save(persona);
+		LOGGER.info("Cliente con identificación {} actualizado con exito", clienteRequest.getIdentificacion());
+
+	}
+
+	@Override
+	@Transactional
+	public void eliminarCliente(Long identificacion) throws ClienteNoEncontradoExcepcion {
+
+		Persona persona = personaRepository.findPersonaIdentificacion(identificacion);
+
+		if (null == persona) {
+			throw new ClienteNoEncontradoExcepcion(
+					"Cliente con número de identificacion: " + identificacion + " no existe");
+		}
+
+		personaRepository.delete(persona);
+
+		LOGGER.info("Cliente con identificación {} eliminado con exito", identificacion);
+
+	}
+
+	private void mapearCliente(ClienteRequest clienteRequest) {
 		Persona personaNueva = new Persona();
 		personaNueva.setIdPersona(Long.valueOf(0));
 		personaNueva.setDireccion(clienteRequest.getDireccion());
@@ -92,82 +154,23 @@ public class ClienteServiceImp implements ClienteService {
 		clienteNuevo.setEstado(clienteRequest.getEstado());
 		clienteNuevo.setidPersonaPK(personaGuardada);
 		clienteRepository.save(clienteNuevo);
-
-		Respuesta respuesta = new Respuesta("200", "Cliente creado con exito", HttpStatus.OK);
-		return Either.right(respuesta);
 	}
 
-	@Override
-	public Either<Exception, Respuesta> actualizarDireccionCliente(String direccion, Long identificacion) {
-
-		Persona persona = personaRepository.findPersonaIdentificacion(identificacion);
-
-		if (null == persona) {
-			return Either.left(new ControlException(
-					"Cliente con número de identificacion: " + identificacion + " no existe", HttpStatus.BAD_REQUEST));
-		}
-
-		persona.setDireccion(direccion);
-		personaRepository.save(persona);
-
-		Respuesta respuesta = new Respuesta("200", "Cliente actualizado con exito", HttpStatus.OK);
-		return Either.right(respuesta);
-	}
-
-	@Override
-	public Either<Exception, Respuesta> actualizarCliente(ClienteRequest clienteRequest) {
+	private void validarCamposCliente(ClienteRequest clienteRequest)
+			throws CampoObligatorioExcepcion, CampoInesperadoExepcion {
 		if (validarRequest(clienteRequest)) {
-			return Either.left(new ControlException("Revise el request, todos los campos son obligatorios",
-					HttpStatus.BAD_REQUEST));
+
+			throw new CampoObligatorioExcepcion("Revise el request, todos los campos son obligatorios");
 		}
 
 		if (clienteRequest.getEdad().equals(Long.valueOf(0))) {
-			return Either.left(new ControlException("La edad del cliente no puede ser 0", HttpStatus.BAD_REQUEST));
+
+			throw new CampoInesperadoExepcion("La edad del cliente no puede ser 0");
 		}
 
 		if (!clienteRequest.getGenero().equals("Masculino") && !clienteRequest.getGenero().equals("Femenino")) {
-			return Either.left(new ControlException("El genero debe ser Masculino o Femenino", HttpStatus.BAD_REQUEST));
+			throw new CampoInesperadoExepcion("El genero debe ser Masculino o Femenino");
 		}
-
-		Persona persona = personaRepository.findPersonaIdentificacion(clienteRequest.getIdentificacion());
-
-		if (null == persona) {
-			return Either.left(new ControlException(
-					"Cliente con número de identificacion: " + clienteRequest.getIdentificacion() + " no existe",
-					HttpStatus.BAD_REQUEST));
-		}
-
-		persona.setDireccion(clienteRequest.getDireccion());
-		persona.setEdad(clienteRequest.getEdad());
-		persona.setGenero(clienteRequest.getGenero());
-		persona.setIdentificacion(clienteRequest.getIdentificacion());
-		persona.setNombre(clienteRequest.getNombre());
-		persona.setTelefono(clienteRequest.getTelefono());
-
-		persona.getCliente()
-				.setContrasena(Base64.getEncoder().encodeToString(clienteRequest.getContrasena().getBytes()));
-		persona.getCliente().setEstado(clienteRequest.getEstado());
-		persona.getCliente().setidPersonaPK(persona);
-		personaRepository.save(persona);
-
-		Respuesta respuesta = new Respuesta("200", "Cliente actualizado con exito", HttpStatus.OK);
-		return Either.right(respuesta);
-	}
-
-	@Override
-	public Either<Exception, Respuesta> eliminarCliente(Long identificacion) {
-
-		Persona persona = personaRepository.findPersonaIdentificacion(identificacion);
-
-		if (null == persona) {
-			return Either.left(new ControlException(
-					"Cliente con número de identificacion: " + identificacion + " no existe", HttpStatus.BAD_REQUEST));
-		}
-
-		personaRepository.delete(persona);
-
-		Respuesta respuesta = new Respuesta("200", "Cliente eliminado con exito", HttpStatus.OK);
-		return Either.right(respuesta);
 	}
 
 	private boolean validarRequest(ClienteRequest clienteRequest) {

@@ -8,18 +8,18 @@ import org.springframework.stereotype.Service;
 
 import com.co.prueba.datatransfer.MovimientosRequest;
 import com.co.prueba.datatransfer.MovimientosResponse;
-import com.co.prueba.datatransfer.Respuesta;
-
-import fj.data.Either;
+import com.co.prueba.exception.CuentaNoEncontradaExcepcion;
+import com.co.prueba.exception.CuentaSaldoInicialExcepcion;
 
 @Service
 public interface MovimientosService {
 
-	public Either<Exception, List<MovimientosResponse>> consultarMovimiento(Long numeroCuenta);
+	public List<MovimientosResponse> consultarMovimiento(Long numeroCuenta) throws CuentaNoEncontradaExcepcion;
 
-	public Either<Exception, List<MovimientosResponse>> consultarMovimientoFecha(Long numeroCuenta, Date fechaInicio,
-			Date fechaFin) throws ParseException;
+	public List<MovimientosResponse> consultarMovimientoFecha(Long numeroCuenta, Date fechaInicio, Date fechaFin)
+			throws ParseException, CuentaNoEncontradaExcepcion;
 
-	public Either<Exception, Respuesta> crearMovimiento(MovimientosRequest movimientoRequest) throws ParseException;
+	public void crearMovimiento(MovimientosRequest movimientoRequest)
+			throws ParseException, CuentaNoEncontradaExcepcion, CuentaSaldoInicialExcepcion;
 
 }

@@ -2,24 +2,31 @@ package com.co.prueba.service.impl;
 
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.co.prueba.datatransfer.CuentaRequest;
-import com.co.prueba.datatransfer.Respuesta;
 import com.co.prueba.domain.Cliente;
 import com.co.prueba.domain.Cuenta;
 import com.co.prueba.domain.Persona;
-import com.co.prueba.exception.ControlException;
+import com.co.prueba.exception.CampoInesperadoExepcion;
+import com.co.prueba.exception.CampoObligatorioExcepcion;
+import com.co.prueba.exception.ClienteInactivoExcepcion;
+import com.co.prueba.exception.ClienteNoEncontradoExcepcion;
+import com.co.prueba.exception.CuentaExisteExcepcion;
+import com.co.prueba.exception.CuentaNoEncontradaExcepcion;
+import com.co.prueba.exception.CuentaSaldoInicialExcepcion;
 import com.co.prueba.repository.CuentaRepository;
 import com.co.prueba.repository.PersonaRepository;
 import com.co.prueba.service.CuentaService;
 
-import fj.data.Either;
-
 @Service
 public class CuentaServiceImp implements CuentaService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(CuentaServiceImp.class);
 
 	@Autowired
 	private CuentaRepository cuentaRepository;
@@ -28,12 +35,11 @@ public class CuentaServiceImp implements CuentaService {
 	private PersonaRepository personaRepository;
 
 	@Override
-	public Either<Exception, CuentaRequest> consultarCuenta(Long numeroCuenta) {
+	public CuentaRequest consultarCuenta(Long numeroCuenta) throws CuentaNoEncontradaExcepcion {
 
 		Cuenta cuenta = cuentaRepository.findCuenta(numeroCuenta);
 		if (null == cuenta) {
-			return Either.left(
-					new ControlException("Número de cuenta: " + numeroCuenta + " no existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaNoEncontradaExcepcion("Número de cuenta: " + numeroCuenta + " no existe");
 		}
 
 		CuentaRequest cuentaRequest = new CuentaRequest();
@@ -44,34 +50,33 @@ public class CuentaServiceImp implements CuentaService {
 		cuentaRequest.setSaldoInicialCuenta(cuenta.getSaldoInicial());
 		cuentaRequest.setTipoCuenta(cuenta.getTipoCuenta());
 
-		return Either.right(cuentaRequest);
+		return cuentaRequest;
 	}
 
 	@Override
-	public Either<Exception, Respuesta> crearCuenta(CuentaRequest cuentaRequest) {
+	@Transactional
+	public void crearCuenta(CuentaRequest cuentaRequest) throws CampoObligatorioExcepcion, ClienteNoEncontradoExcepcion,
+			ClienteInactivoExcepcion, CuentaExisteExcepcion, CampoInesperadoExepcion {
 
 		if (validarRequest(cuentaRequest)) {
-			return Either.left(new ControlException("Revise el request, todos los campos son obligatorios",
-					HttpStatus.BAD_REQUEST));
+			throw new CampoObligatorioExcepcion("Revise el request, todos los campos son obligatorios");
 		}
 
 		Persona persona = personaRepository.findPersonaIdentificacion(cuentaRequest.getIdentificacionCliente());
 
 		if (null == persona) {
-			return Either.left(new ControlException(
-					"Cliente con número de identificacion: " + cuentaRequest.getIdentificacionCliente() + " no existe",
-					HttpStatus.BAD_REQUEST));
+			throw new ClienteNoEncontradoExcepcion(
+					"Cliente con número de identificacion: " + cuentaRequest.getIdentificacionCliente() + " no existe");
 		}
 
 		if (Boolean.FALSE.equals(persona.getCliente().getEstado())) {
-			return Either.left(new ControlException("Cliente se encuentra inactivo para crear cuentas", HttpStatus.OK));
+			throw new ClienteInactivoExcepcion("Cliente se encuentra inactivo para crear cuentas");
 		}
 
 		Cuenta cuenta = cuentaRepository.findCuenta(cuentaRequest.getNumeroCuenta());
 
 		if (null != cuenta) {
-			return Either.left(new ControlException(
-					"Número de cuenta: " + cuentaRequest.getNumeroCuenta() + " ya existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaExisteExcepcion("Número de cuenta: " + cuentaRequest.getNumeroCuenta() + " ya existe");
 		}
 
 		if (cuentaRequest.getTipoCuenta().equals("Ahorros") || cuentaRequest.getTipoCuenta().equals("Corriente")) {
@@ -91,42 +96,40 @@ public class CuentaServiceImp implements CuentaService {
 
 			cuentaRepository.save(cuentaNueva);
 
-			Respuesta respuesta = new Respuesta("200", "Cuenta creada con exito", HttpStatus.OK);
-			return Either.right(respuesta);
+			LOGGER.info("Cuenta {} creada con exito", cuentaRequest.getNumeroCuenta());
 
 		} else {
-			return Either.left(new ControlException("Las tipos de cuentas permitidas son: Ahorros, Corriente",
-					HttpStatus.BAD_REQUEST));
+			throw new CampoInesperadoExepcion("Las tipos de cuentas permitidas son: Ahorros, Corriente");
 		}
 
 	}
 
 	@Override
-	public Either<Exception, Respuesta> actualizarCuenta(CuentaRequest cuentaRequest) {
+	@Transactional
+	public void actualizarCuenta(CuentaRequest cuentaRequest)
+			throws CampoObligatorioExcepcion, CuentaNoEncontradaExcepcion, ClienteNoEncontradoExcepcion,
+			CuentaSaldoInicialExcepcion, CampoInesperadoExepcion {
 
 		if (validarRequest(cuentaRequest)) {
-			return Either.left(new ControlException("Revise el request, todos los campos son obligatorios",
-					HttpStatus.BAD_REQUEST));
+			throw new CampoObligatorioExcepcion("Revise el request, todos los campos son obligatorios");
 		}
 
 		Cuenta cuenta = cuentaRepository.findCuenta(cuentaRequest.getNumeroCuenta());
 		if (null == cuenta) {
-			return Either.left(new ControlException(
-					"Número de cuenta: " + cuentaRequest.getNumeroCuenta() + " no existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaNoEncontradaExcepcion(
+					"Número de cuenta: " + cuentaRequest.getNumeroCuenta() + " no existe");
 		}
 
 		Persona persona = personaRepository.findPersonaIdentificacion(cuentaRequest.getIdentificacionCliente());
 
 		if (null == persona) {
-			return Either.left(new ControlException(
-					"Cliente con número de identificacion: " + cuentaRequest.getIdentificacionCliente() + " no existe",
-					HttpStatus.BAD_REQUEST));
+			throw new ClienteNoEncontradoExcepcion(
+					"Cliente con número de identificacion: " + cuentaRequest.getIdentificacionCliente() + " no existe");
 		}
 
 		if (!cuentaRequest.getSaldoInicialCuenta().equals(cuenta.getSaldoInicial())
 				&& !cuenta.getMovimientoList().isEmpty()) {
-			return Either.left(new ControlException("No se puede modificar el saldo inicial porque tiene movimientos",
-					HttpStatus.BAD_REQUEST));
+			throw new CuentaSaldoInicialExcepcion("No se puede modificar el saldo inicial porque tiene movimientos");
 		}
 
 		if (cuentaRequest.getTipoCuenta().equals("Ahorros") || cuentaRequest.getTipoCuenta().equals("Corriente")) {
@@ -142,45 +145,39 @@ public class CuentaServiceImp implements CuentaService {
 
 			cuentaRepository.save(cuenta);
 
-			Respuesta respuesta = new Respuesta("200", "Cuenta actualizada con exito", HttpStatus.OK);
-			return Either.right(respuesta);
+			LOGGER.info("Cuenta {} actualizada con exito", cuentaRequest.getNumeroCuenta());
 
 		} else {
-			return Either.left(new ControlException("Las tipos de cuentas permitidas son: Ahorros, Corriente",
-					HttpStatus.BAD_REQUEST));
+			throw new CampoInesperadoExepcion("Las tipos de cuentas permitidas son: Ahorros, Corriente");
 		}
 
 	}
 
 	@Override
-	public Either<Exception, Respuesta> actualizarEstadoCuenta(Boolean estado, Long numeroCuenta) {
+	@Transactional
+	public void actualizarEstadoCuenta(Boolean estado, Long numeroCuenta) throws CuentaNoEncontradaExcepcion {
 
 		Cuenta cuenta = cuentaRepository.findCuenta(numeroCuenta);
 		if (null == cuenta) {
-			return Either.left(
-					new ControlException("Número de cuenta: " + numeroCuenta + " no existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaNoEncontradaExcepcion("Número de cuenta: " + numeroCuenta + " no existe");
 		}
 
 		cuenta.setEstado(estado);
 		cuentaRepository.save(cuenta);
-
-		Respuesta respuesta = new Respuesta("200", "Cuenta actualizada con exito", HttpStatus.OK);
-		return Either.right(respuesta);
+		LOGGER.info("Estado de la cuenta {} cambiada a {} con exito", numeroCuenta, estado);
 	}
 
 	@Override
-	public Either<Exception, Respuesta> eliminarCuenta(Long numeroCuenta) {
+	@Transactional
+	public void eliminarCuenta(Long numeroCuenta) throws CuentaNoEncontradaExcepcion {
 
 		Cuenta cuenta = cuentaRepository.findCuenta(numeroCuenta);
 		if (null == cuenta) {
-			return Either.left(
-					new ControlException("Número de cuenta: " + numeroCuenta + " no existe", HttpStatus.BAD_REQUEST));
+			throw new CuentaNoEncontradaExcepcion("Número de cuenta: " + numeroCuenta + " no existe");
 		}
 
 		cuentaRepository.delete(cuenta);
-
-		Respuesta respuesta = new Respuesta("200", "Cuenta eliminada con exito", HttpStatus.OK);
-		return Either.right(respuesta);
+		LOGGER.info("Cuenta {}eliminada con exito", numeroCuenta);
 	}
 
 	private boolean validarRequest(CuentaRequest cuentaRequest) {
